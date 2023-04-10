@@ -71,7 +71,7 @@ in your system. To build the `op-solver` with the exact algorithm:
 ```sh
 make clean
 ../configure --with-cplex=<CPLEX_PATH>
-#../configure --with-cplex=/opt/ibm/ILOG/CPLEX_Studio125/cplex/
+#../configure --with-cplex=/opt/ibm/ILOG/CPLEX_Studio_Community2211/cplex
 make
 ```
 
