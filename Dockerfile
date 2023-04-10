@@ -1,32 +1,30 @@
-FROM alpine:latest
+FROM arneso/ubuntu-cplex:2211 AS builder
 
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
+RUN apt-get update && apt install -y \
+    autoconf \
+    automake \
+    build-essential \
+    git \
+    libgmp-dev \
+    libtool \
+    m4 \
+    && rm -rf /var/lib/apt/lists/*
 
-ARG PACKAGES="git"
-ARG BUILD_DEPS="build-base autoconf automake libtool m4 gmp-dev"
+RUN git clone --depth 1 https://github.com/arnesor/op-solver.git
 
-RUN apk update
-RUN apk --no-cache --update add $PACKAGES
-RUN apk --no-cache --update add $BUILD_DEPS
-
-# Install op-solver
-WORKDIR /src
-RUN set -x \
-  && git clone --depth 1  https://github.com/gkobeaga/op-solver \
-  && ( \
-    cd op-solver \
+RUN cd op-solver \
     && ./autogen.sh \
-    && mkdir build && cd build \
-    && ../configure \
+    && mkdir -p build \
+    && cd build \
+    && ../configure --with-cplex=/opt/ibm/ILOG/CPLEX_Studio_Community2211/cplex \
     && make \
-    && make check \
     && make install \
-  )
+    && git clone --depth 1 https://github.com/bcamath-ds/OPLib.git
 
-# Download OPLib
-WORKDIR /
-RUN set -x \
-  && git clone --depth 1  https://github.com/bcamath-ds/OPLib
 
+FROM ubuntu:latest
+ENV LD_LIBRARY_PATH=/usr/local/lib/
+COPY --from=builder /usr/local/ /usr/local/
+COPY --from=builder /op-solver/build/OPLib/ /OPLib/
 WORKDIR /tmp
 ENTRYPOINT ["/usr/local/bin/op-solver"]
